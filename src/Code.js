@@ -544,3 +544,12 @@ function buildItemPlaceholderMap_(nv, rowIndex) {
   log('✅ Built item placeholder map with %s entries', Object.keys(combined).length);
   return combined;
 }
+
+function installSubmitTrigger_() {
+  const ss = SpreadsheetApp.openById(CONFIG.SOURCE_SHEET_ID);
+  ScriptApp.newTrigger('onFormSubmit')
+    .forSpreadsheet(ss)
+    .onFormSubmit()
+    .create();
+  Logger.log('✅ Installed standalone onFormSubmit trigger');
+}
