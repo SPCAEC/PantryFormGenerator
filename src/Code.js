@@ -95,14 +95,19 @@ function generateOrderForm_(rowIndex, force = false) {
       if (urlCol > 0) sh.getRange(rowIndex, urlCol).setValue(pdfFile.getUrl());
       if (tsCol > 0) sh.getRange(rowIndex, tsCol).setValue(new Date());
     } else {
-      // Forced regeneration (preserve originals)
+      // Forced regeneration (preserve originals; write regen columns together)
       const regenIdCol = headers.indexOf('Regenerated PDF ID') + 1;
       const regenUrlCol = headers.indexOf('Regenerated PDF URL') + 1;
-      const regenTsCol = headers.indexOf('Last Regenerated At') + 1;
+      const regenTsCol  = headers.indexOf('Last Regenerated At') + 1;
 
-      if (regenIdCol > 0) sh.getRange(rowIndex, regenIdCol).setValue(pdfFile.getId());
-      if (regenUrlCol > 0) sh.getRange(rowIndex, regenUrlCol).setValue(pdfFile.getUrl());
-      if (regenTsCol > 0) sh.getRange(rowIndex, regenTsCol).setValue(new Date());
+      if (regenIdCol && regenUrlCol && regenTsCol) {
+        sh.getRange(rowIndex, regenIdCol, 1, 3).setValues([[pdfFile.getId(), pdfFile.getUrl(), new Date()]]);
+      } else {
+        // fallback if any column missing
+        if (regenIdCol) sh.getRange(rowIndex, regenIdCol).setValue(pdfFile.getId());
+        if (regenUrlCol) sh.getRange(rowIndex, regenUrlCol).setValue(pdfFile.getUrl());
+        if (regenTsCol)  sh.getRange(rowIndex, regenTsCol).setValue(new Date());
+      }
     }
 
     Logger.log(
@@ -199,9 +204,10 @@ function mergeSlidesToPdf_(mergeMap, outName) {
 
 function makeOutputName_(nv) {
   const ts = Utilities.formatDate(new Date(), CONFIG.TZ, 'yyyyMMdd_HHmm');
-  const first = nv['First Name'] || 'Unknown';
-  const last = nv['Last Name'] || '';
-  return `PetPantryForm_${first}_${last}_${ts}`;
+  const first = (nv['First Name'] || 'Unknown').replace(/\s+/g, '');
+  const last  = (nv['Last Name']  || '').replace(/\s+/g, '');
+  const formId = nv['FormID'] || '000000000000';
+  return `PetPantryForm_${first}_${last}_${formId}_${ts}`;
 }
 
 /** === BARCODE === **/
