@@ -503,38 +503,32 @@ function buildItemPlaceholderMap_(nv, rowIndex) {
     if (rule.amountPlaceholder) amountMap[rule.amountPlaceholder] = rule.amountGiven || '';
   });
 
-  // --- PUPPY LOGIC ---
-  if (
-    countPuppies > 0 &&
-    requestedItems.some(r =>
-      r.includes('dog food') || r.includes('wet dog food') || r.includes('canned dog food')
-    )
-  ) {
+ // --- PUPPY LOGIC ---
+  if (countPuppies > 0) {
+    // Always include both dry & wet puppy food if there are puppies
     ['Dry Puppy Food', 'Wet Puppy Food'].forEach(item => {
       const result = computeLine(item, countPuppies);
       if (!result) return;
       const rule = guidelines[item.toLowerCase()];
       if (rule) {
         placeholderMap[rule.placeholder] = result.text;
-        if (rule.amountPlaceholder) amountMap[rule.amountPlaceholder] = rule.amountGiven || '';
+        if (rule.amountPlaceholder)
+          amountMap[rule.amountPlaceholder] = rule.amountGiven || '';
       }
     });
   }
 
   // --- KITTEN LOGIC ---
-  if (
-    countKittens > 0 &&
-    requestedItems.some(r =>
-      r.includes('cat food') || r.includes('wet cat food') || r.includes('canned cat food')
-    )
-  ) {
+  if (countKittens > 0) {
+    // Always include both dry & wet kitten food if there are kittens
     ['Dry Kitten Food', 'Wet Kitten Food'].forEach(item => {
       const result = computeLine(item, countKittens);
       if (!result) return;
       const rule = guidelines[item.toLowerCase()];
       if (rule) {
         placeholderMap[rule.placeholder] = result.text;
-        if (rule.amountPlaceholder) amountMap[rule.amountPlaceholder] = rule.amountGiven || '';
+        if (rule.amountPlaceholder)
+          amountMap[rule.amountPlaceholder] = rule.amountGiven || '';
       }
     });
   }
@@ -543,13 +537,4 @@ function buildItemPlaceholderMap_(nv, rowIndex) {
   const combined = Object.assign({}, placeholderMap, amountMap);
   log('✅ Built item placeholder map with %s entries', Object.keys(combined).length);
   return combined;
-}
-
-function installSubmitTrigger_() {
-  const ss = SpreadsheetApp.openById(CONFIG.SOURCE_SHEET_ID);
-  ScriptApp.newTrigger('onFormSubmit')
-    .forSpreadsheet(ss)
-    .onFormSubmit()
-    .create();
-  Logger.log('✅ Installed standalone onFormSubmit trigger');
 }
