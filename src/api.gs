@@ -41,7 +41,7 @@ function handleRecreateRequest_(formIds) {
     formIds.forEach(id => {
       try {
         // Core function: regenerate this form by FormID
-        const output = generateOrderFormByRow(id, { overrideDuplicateCheck: true });
+        const output = generateOrderFormByFormId(id, true);
         results.push({ formId: id, ok: true, output });
       } catch (errInner) {
         Logger.log('⚠️ Recreate failed for %s: %s', id, errInner);
