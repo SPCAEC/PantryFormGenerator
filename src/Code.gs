@@ -40,6 +40,42 @@ function onFormSubmit(e) {
 }
 
 /**
+ * Recreate one or more forms by FormID.
+ * Called remotely via Generator API (from the Pantry dashboard).
+ */
+function recreateFormsById(formIds) {
+  try {
+    const ids = Array.isArray(formIds) ? formIds : [formIds];
+    const ss = SpreadsheetApp.openById(CONFIG.SOURCE_SHEET_ID);
+    const sh = ss.getSheetByName(CONFIG.RESPONSE_SHEET_NAME);
+    const vals = sh.getDataRange().getValues();
+    const headers = vals.shift();
+    const formIdIdx = headers.indexOf(CONFIG.FORM_ID_COLUMN);
+
+    if (formIdIdx === -1) throw new Error('FormID column not found.');
+
+    const results = [];
+
+    ids.forEach(id => {
+      const rowIndex = vals.findIndex(r => String(r[formIdIdx]) === String(id));
+      if (rowIndex === -1) {
+        results.push({ id, ok: false, message: 'FormID not found' });
+        return;
+      }
+
+      const res = generateOrderForm_(rowIndex + 2, true); // +2 for header offset
+      results.push({ id, ok: !!res.ok, url: res.url || '', message: res.message || '' });
+    });
+
+    Logger.log('✅ recreateFormsById completed for %s form(s)', results.length);
+    return { ok: true, results };
+  } catch (err) {
+    Logger.log('❌ recreateFormsById error: %s', err);
+    return { ok: false, message: String(err) };
+  }
+}
+
+/**
  * Generate or regenerate a Pantry form by its FormID (for API use).
  * Finds the matching row and calls generateOrderForm_() safely.
  */
