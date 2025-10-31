@@ -39,6 +39,32 @@ function onFormSubmit(e) {
   }
 }
 
+/**
+ * Generate or regenerate a Pantry form by its FormID (for API use).
+ * Finds the matching row and calls generateOrderForm_() safely.
+ */
+function generateOrderFormByFormId(formId, force = true) {
+  try {
+    if (!formId) throw new Error('Missing FormID');
+
+    const ss = SpreadsheetApp.openById(CONFIG.SOURCE_SHEET_ID);
+    const sh = ss.getSheetByName(CONFIG.RESPONSE_SHEET_NAME);
+    const data = sh.getDataRange().getValues();
+    const headers = data.shift();
+    const idx = headers.indexOf(CONFIG.FORM_ID_COLUMN);
+    if (idx < 0) throw new Error(`FormID column not found in "${CONFIG.RESPONSE_SHEET_NAME}"`);
+
+    const rowIndex = data.findIndex(r => String(r[idx]).trim() === String(formId).trim());
+    if (rowIndex < 0) throw new Error(`FormID ${formId} not found`);
+
+    const actualRow = rowIndex + 2; // +2 for header offset
+    return generateOrderForm_(actualRow, force);
+
+  } catch (err) {
+    Logger.log(`❌ generateOrderFormByFormId failed for ${formId}: ${err}`);
+    return { ok: false, message: String(err) };
+  }
+}
 
 /**
  * === INTERNAL CORE ===
