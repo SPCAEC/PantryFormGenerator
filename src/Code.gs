@@ -679,3 +679,31 @@ function buildItemPlaceholderMap_(nv, rowIndex) {
   log('✅ Built item placeholder map with %s entries', Object.keys(combined).length);
   return combined;
 }
+/**
+ * === TEMP UTILITY: batch-generate forms for a range of rows ===
+ * Generates order forms for rows 631–650 inclusive.
+ * Each row uses the standard generateOrderForm_() logic with force=true.
+ */
+function generateFormsBatch_631_650() {
+  const ss = SpreadsheetApp.openById(CONFIG.SOURCE_SHEET_ID);
+  const sh = ss.getSheetByName(CONFIG.RESPONSE_SHEET_NAME);
+
+  const startRow = 631;
+  const endRow = 650;
+  const results = [];
+
+  for (let row = startRow; row <= endRow; row++) {
+    try {
+      Logger.log(`▶️ Generating form for row ${row}`);
+      const res = generateOrderForm_(row, true);
+      results.push({ row, ok: res.ok, url: res.url || '', message: res.message || '' });
+    } catch (err) {
+      Logger.log(`❌ Row ${row} failed: ${err}`);
+      results.push({ row, ok: false, message: String(err) });
+    }
+    Utilities.sleep(1000); // gentle 1 s delay to avoid Drive API throttle
+  }
+
+  Logger.log(`✅ Batch complete — ${results.filter(r => r.ok).length} / ${results.length} succeeded.`);
+  return results;
+}
