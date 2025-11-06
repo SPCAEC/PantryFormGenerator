@@ -428,6 +428,79 @@ function computeAnimalSummary_(nv, rowIndex) {
   };
 }
 
+/**
+ * === MERGE MAP BUILDER ===
+ * Builds the placeholder→value mapping for Slides template merge.
+ * Uses current row data, animal summary, and guideline items.
+ */
+function buildMergeMap_(nv, summary, rowIndex) {
+  const merge = {};
+
+  // --- Basic info ---
+  merge['{{formDate}}'] = Utilities.formatDate(new Date(), CONFIG.TZ, 'M/d/yyyy');
+  merge['{{FormID}}'] = nv['FormID'] || '';
+  merge['{{fullName}}'] = `${nv['First Name'] || ''} ${nv['Last Name'] || ''}`.trim();
+  merge['{{phone}}'] = nv['Phone Number'] || '';
+  merge['{{email}}'] = nv['Email Address'] || '';
+
+  const contactRaw = nv['Preferred Contact Method'] || nv['Contact Method'] || '';
+  let contactClean = '';
+  if (contactRaw) {
+    const matches = contactRaw.match(/\b(Text|Email|Phone)\b(?=\s*[–—-])/gi);
+    if (matches && matches.length) {
+      const unique = [...new Set(matches.map(m =>
+        m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()
+      ))];
+      contactClean = unique.join(', ');
+    }
+  }
+  merge['{{Contact}}'] = contactClean;
+
+  merge['{{addressLine1}}'] = nv['Address Line 1'] || '';
+  merge['{{addressLine2}}'] = nv['Address Line 2'] || '';
+  merge['{{city}}'] = nv['Town/City'] || '';
+  merge['{{state}}'] = nv['State'] || '';
+  merge['{{zip}}'] = nv['Zip Code'] || '';
+  merge['{{newClient}}'] = nv['Returning Client'] || '';
+  merge['{{services}}'] = nv['Additional Services'] || '';
+  merge['{{pickupWindow}}'] =
+    /(sat|sun|weekend)/i.test(String(nv['Pick-up Window'] || '').toLowerCase()) ? 'Saturday' : 'Weekday';
+  merge['{{todaysDate}}'] = Utilities.formatDate(new Date(), CONFIG.TZ, 'M/d/yyyy');
+  merge['{{lastName}}'] = nv['Last Name'] || '';
+
+  // --- Pet slots ---
+  for (let i = 1; i <= CONFIG.PET_SLOTS; i++) {
+    const prefix = `Pet ${i}`;
+    merge[`{{${i}Name}}`] = nv[`${prefix} Name`] || '';
+    merge[`{{${i}Species}}`] = nv[`${prefix} Species`] || '';
+    merge[`{{${i}Breed}}`] = nv[`${prefix} Breed`] || '';
+    merge[`{{${i}Color}}`] = nv[`${prefix} Color`] || '';
+    merge[`{{${i}Age}}`] = nv[`${prefix} Age`] || '';
+    merge[`{{${i}Units}}`] = nv[`${prefix} Units`] || '';
+    merge[`{{${i}Weight}}`] = nv[`${prefix} Weight`] || '';
+    merge[`{{${i}Sex}}`] = nv[`${prefix} Sex`] || '';
+    merge[`{{${i}SPN}}`] = nv[`${prefix} Spay/Neuter`] || '';
+  }
+
+  // --- Animal summary ---
+  merge['{{adultDogCount}}'] = summary.adultDogCount || 0;
+  merge['{{puppyCount}}'] = summary.puppyCount || 0;
+  merge['{{adultCatCount}}'] = summary.adultCatCount || 0;
+  merge['{{kittenCount}}'] = summary.kittenCount || 0;
+  merge['{{dogSizes}}'] = summary.dogSizes || '';
+  merge['{{otherSpecies}}'] = summary.otherSpecies || '';
+
+  // --- Recommended items (from guidelines) ---
+  try {
+    const itemsMap = buildItemPlaceholderMap_(nv, rowIndex);
+    Object.assign(merge, itemsMap);
+  } catch (err) {
+    Logger.log('⚠️ buildItemPlaceholderMap_ failed: %s', err);
+  }
+
+  return merge;
+}
+
 /** === HELPERS === **/
 function getFirst(v) { return Array.isArray(v) ? v[0] : v; }
 function parseWeightLbs_(raw) {
